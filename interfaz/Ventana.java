@@ -1,0 +1,175 @@
+package interfaz;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import datos.Tabla;
+import funciones.Funcion;
+import funciones.NewtonRaphson;
+
+public class Ventana implements ActionListener {
+	
+	private JFrame ventana = new JFrame("Aproximacion de Raizes de Funciones - Newton Raphson");
+	private JPanel panel = new JPanel();
+	private JLabel x0, maxIteraciones, error;
+	private JTextField x0_entrada, maxIteraciones_entrada, error_entrada;
+	private JButton iniciar;
+	private JTabbedPane tabbed;
+	private JPanel panelIteraciones=new JPanel();
+	private DefaultTableModel dtm;
+	private JTable table;
+	private JScrollPane scrollpane;
+	
+	
+	//Grafico
+	private XYDataset datosGraficoLinea;
+	private JFreeChart tablaGrafico;
+	private XYSeriesCollection datos;
+	
+	public Ventana() {
+		panel = new JPanel();
+		
+		x0 = new JLabel("X0");
+		maxIteraciones = new JLabel("Maximas Iteraciones");
+		error = new JLabel("Error");
+		
+		x0_entrada = new JTextField(5);
+		maxIteraciones_entrada = new JTextField(5);
+		error_entrada = new JTextField(5);
+		
+		x0_entrada.setText("-1");
+		maxIteraciones_entrada.setText("25");
+		error_entrada.setText("1E-4");	
+		
+		iniciar = new JButton("Iniciar");
+		iniciar.addActionListener(this);
+		
+		dtm = new DefaultTableModel(new Object[][]{{"1","Hola"},{"",""}}, new Object[]{"1","Hola"});
+		table = new JTable(dtm);
+		scrollpane = new JScrollPane(table);
+		
+		datos =  new XYSeriesCollection();
+		datosGraficoLinea = funcion();
+		tablaGrafico = ChartFactory.createXYLineChart("Newton Raphson", "Eje X", "Eje y", datosGraficoLinea);
+	    ChartPanel panelGrafico = new ChartPanel(tablaGrafico);
+		
+	    panelIteraciones.setLayout(new BorderLayout());
+	    panelIteraciones.add(scrollpane);
+	    
+	    tabbed=new JTabbedPane();
+		tabbed.add("Grafico",panelGrafico);
+	    tabbed.add("Tabla",panelIteraciones);
+
+		panel.setLayout(new FlowLayout());
+		
+		panel.add(x0);
+		panel.add(x0_entrada);		
+		panel.add(maxIteraciones);
+		panel.add(maxIteraciones_entrada);
+		panel.add(error);
+		panel.add(error_entrada);
+		panel.add(iniciar);
+		
+		ventana.setLayout(new BorderLayout());
+		panel.setBorder(new EmptyBorder(20, 15,15,15));
+		ventana.add(panel,BorderLayout.NORTH);
+		ventana.add(tabbed,BorderLayout.CENTER);
+		
+		/*Se adapta a la interfaz grafica del sistema operativo*/
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			SwingUtilities.updateComponentTreeUI(ventana);
+		}
+		catch (Exception evt){}
+		
+		int ancho = 550;
+		int alto = 550;
+		
+		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+		ventana.setLocation((d.width/2)-(ancho/2), (d.height/2)-(alto/2));//Establece la posicion en la pantalla
+		ventana.setSize(ancho, alto);
+		ventana.setVisible(true);
+		ventana.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);//Cierre de la ventana
+	}
+	
+	private XYDataset funcion()
+    {
+        //Se declaran las series y se llenan los datos
+		XYSeries fx = new XYSeries("f(x)");        
+       
+        //Se grafica la funcion
+        for(double x=-50; x<50; x=x+2) {
+        	fx.add(x,Funcion.original(x));
+        }
+
+        datos.addSeries(fx);
+        return datos;
+    }
+	
+	private XYDataset aproximacion(double inicio, int maxIteraciones, double error)
+    {
+        //Se declaran las series y se llenan los datos
+		XYSeries fx = new XYSeries("f(x)"); 
+        XYSeries gx = new XYSeries("g(x)");        
+        
+        //Se realizan los calculos
+        Tabla tabla = NewtonRaphson.calcular(inicio,maxIteraciones,error);
+        
+        //Se grafica la funcion
+        for(double x=tabla.obtenerMinimo(); x<tabla.obtenerMaximo(); x=x+(tabla.obtenerMaximo()-tabla.obtenerMinimo())/100) {
+        	fx.add(x,Funcion.original(x));
+        }
+        
+      //Se dibuja la aproximacion
+        for(int x=0; x<tabla.tamaño(); x++) {
+        	gx.add(tabla.obtenerFila(x).obtenerX(),0);
+        	gx.add(tabla.obtenerFila(x).obtenerX(),Funcion.original(tabla.obtenerFila(x).obtenerX()));
+        }
+        datos.removeAllSeries();
+        datos.addSeries(fx);
+        datos.addSeries(gx);        
+
+        return datos;
+    }
+
+	@Override
+	public void actionPerformed(ActionEvent evento) {
+		if(evento.getSource() == iniciar) {
+			try {
+				datosGraficoLinea = aproximacion(Double.parseDouble(x0_entrada.getText()),Integer.parseInt(maxIteraciones_entrada.getText()),Double.parseDouble(error_entrada.getText()));
+			}
+			catch (NumberFormatException e) {
+				x0_entrada.setText("-1");
+				maxIteraciones_entrada.setText("25");
+				error_entrada.setText("1E-4");
+			}
+			panel.updateUI();
+		}
+	}
+}
