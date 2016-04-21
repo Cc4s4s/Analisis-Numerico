@@ -44,6 +44,7 @@ public class Ventana implements ActionListener {
 	private DefaultTableModel dtm;
 	private JTable table;
 	private JScrollPane scrollpane;
+	private Object[][] ArregloDatos;
 	
 	
 	//Grafico
@@ -58,9 +59,9 @@ public class Ventana implements ActionListener {
 		maxIteraciones = new JLabel("Maximas Iteraciones");
 		error = new JLabel("Error");
 		
-		x0_entrada = new JTextField(5);
-		maxIteraciones_entrada = new JTextField(5);
-		error_entrada = new JTextField(5);
+		x0_entrada = new JTextField(10);
+		maxIteraciones_entrada = new JTextField(10);
+		error_entrada = new JTextField(10);
 		
 		x0_entrada.setText("-1");
 		maxIteraciones_entrada.setText("25");
@@ -69,9 +70,7 @@ public class Ventana implements ActionListener {
 		iniciar = new JButton("Iniciar");
 		iniciar.addActionListener(this);
 		
-		dtm = new DefaultTableModel(new Object[][]{{"1","Hola"},{"",""}}, new Object[]{"1","Hola"});
-		table = new JTable(dtm);
-		scrollpane = new JScrollPane(table);
+		scrollpane = new JScrollPane();
 		
 		datos =  new XYSeriesCollection();
 		datosGraficoLinea = funcion();
@@ -163,6 +162,15 @@ public class Ventana implements ActionListener {
 		if(evento.getSource() == iniciar) {
 			try {
 				datosGraficoLinea = aproximacion(Double.parseDouble(x0_entrada.getText()),Integer.parseInt(maxIteraciones_entrada.getText()),Double.parseDouble(error_entrada.getText()));
+				Tabla tabla=NewtonRaphson.calcular(Double.parseDouble(x0_entrada.getText()), Integer.parseInt(maxIteraciones_entrada.getText()), Double.parseDouble(error_entrada.getText()));
+				ArregloDatos=new Object[tabla.tamaño()][2];
+				for(int x=0;x<tabla.tamaño();x++){
+					ArregloDatos[x][0]="X"+x;
+					ArregloDatos[x][1]=tabla.obtenerFila(x).obtenerX();
+				}
+				dtm = new DefaultTableModel(ArregloDatos, new Object[]{"X","Valor"});
+				table = new JTable(dtm);
+				scrollpane.setViewportView(table);
 			}
 			catch (NumberFormatException e) {
 				x0_entrada.setText("-1");
