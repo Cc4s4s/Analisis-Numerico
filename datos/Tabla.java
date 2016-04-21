@@ -48,4 +48,12 @@ public class Tabla {
 	public int tamaño() {
 		return datos.size();
 	}
+	
+	public double obtenerResultadoX() {
+		return datos.get(datos.size()-1).obtenerX();
+	}
+	
+	public double obtenerResultadoError() {
+		return datos.get(datos.size()-1).obtenerError();
+	}
 }
