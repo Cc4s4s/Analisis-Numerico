@@ -1,0 +1,160 @@
+package interfaz;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.xml.parsers.DocumentBuilder;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import datos.Tabla;
+import funciones.Funcion;
+import funciones.IteradasFuncionales;
+import funciones.NewtonRaphson;
+
+public class panelIteradas extends JPanel implements ActionListener{
+	private JLabel x0, maxIteraciones, error;
+	private JTextField x0_entrada, maxIteraciones_entrada, error_entrada;
+	private JButton iniciar;
+	private JPanel PanelNorth=new JPanel();
+	
+	private XYDataset datosGraficoLinea;
+	private JFreeChart tablaGrafico;
+	private XYSeriesCollection datos;
+	
+	private Object[][] ArregloDatos;
+	private DefaultTableModel dtm;
+	private JTable table;
+	private JScrollPane scrollpane;
+	
+	private JTabbedPane graficotabla=new JTabbedPane();
+	
+	public panelIteradas(){
+		setLayout(new BorderLayout());
+		
+		PanelNorth.setLayout(new FlowLayout());
+		
+		x0 = new JLabel("X0");
+		maxIteraciones = new JLabel("Maximas Iteraciones");
+		error = new JLabel("Error");
+
+		x0_entrada = new JTextField(10);
+		maxIteraciones_entrada = new JTextField(10);
+		error_entrada = new JTextField(10);
+		
+		x0_entrada.setText("-1");
+		maxIteraciones_entrada.setText("25");
+		error_entrada.setText("1E-4");
+		
+		iniciar = new JButton("Iniciar");
+		iniciar.addActionListener(this);
+		
+		scrollpane=new JScrollPane();
+		
+		datos =  new XYSeriesCollection();
+		datosGraficoLinea=funcion();
+		tablaGrafico = ChartFactory.createXYLineChart("Iteradas Funcionales", "Eje X", "Eje Y",datosGraficoLinea,PlotOrientation.VERTICAL,true,true,false);
+		ChartPanel panelGrafico=new ChartPanel(tablaGrafico);
+		
+		PanelNorth.add(x0);
+		PanelNorth.add(x0_entrada);
+		PanelNorth.add(maxIteraciones);
+		PanelNorth.add(maxIteraciones_entrada);
+		PanelNorth.add(error);
+		PanelNorth.add(error_entrada);
+		PanelNorth.add(iniciar);
+		
+		graficotabla.add("Grafico",panelGrafico);
+		graficotabla.add("Tabla",scrollpane);
+		
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			SwingUtilities.updateComponentTreeUI(this);
+		}
+		catch (Exception evt){}		
+	
+		PanelNorth.setBorder(new EmptyBorder(20, 15,15,15));
+		
+		add(PanelNorth,BorderLayout.NORTH);
+		add(graficotabla,BorderLayout.CENTER);
+	}
+	
+	private XYDataset funcion(){
+		XYSeries fx=new XYSeries("f(x)");
+		for(double x=-50;x<50;x=x+2){
+			fx.add(x,Funcion.original(x));
+		}
+		
+		datos.addSeries(fx);
+		return datos;
+	}
+	
+	private XYDataset aproximacion(double inicio,int maximasIteraciones,double error){
+		XYSeries fx=new XYSeries("f(x)");
+		XYSeries gx=new XYSeries("g(x)");
+		Tabla tabla=IteradasFuncionales.calcularIterada(inicio,maximasIteraciones);
+		
+		for(double x=tabla.obtenerMinimo();x<tabla.obtenerMaximo();x=x+(tabla.obtenerMaximo()-tabla.obtenerMinimo())/100){
+			fx.add(x,Funcion.original(x));
+		}
+		
+		for(int x=0;x<tabla.tamaño();x++){
+			gx.add(tabla.obtenerFila(x).obtenerX(),0);
+			gx.add(tabla.obtenerFila(x).obtenerX(),Funcion.original(tabla.obtenerFila(x).obtenerX()));
+		}
+		datos.removeAllSeries();
+		datos.addSeries(fx);
+		datos.addSeries(gx);
+		
+		return datos;
+		
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent evento) {
+		if(evento.getSource() == iniciar) {
+			try {
+				datosGraficoLinea = aproximacion(Double.parseDouble(x0_entrada.getText()),Integer.parseInt(maxIteraciones_entrada.getText()),Double.parseDouble(error_entrada.getText()));
+				Tabla tabla=NewtonRaphson.calcular(Double.parseDouble(x0_entrada.getText()), Integer.parseInt(maxIteraciones_entrada.getText()), Double.parseDouble(error_entrada.getText()));
+				ArregloDatos=new Object[tabla.tamaño()][2];
+				for(int x=0;x<tabla.tamaño();x++){
+					ArregloDatos[x][0]="X"+x;
+					ArregloDatos[x][1]=tabla.obtenerFila(x).obtenerX();
+				}
+				dtm = new DefaultTableModel(ArregloDatos, new Object[]{"X","Valor"}){
+					public boolean isCellEditable(int row,int column){
+						return false;
+					}
+				};;
+				table = new JTable(dtm);
+				scrollpane.setViewportView(table);
+			}
+			catch (NumberFormatException e) {
+				x0_entrada.setText("-1");
+				maxIteraciones_entrada.setText("25");
+				error_entrada.setText("1E-4");
+			}
+		}
+	}
+	
+}
