@@ -16,10 +16,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import org.jfree.chart.ChartFactory;
@@ -188,13 +190,22 @@ public class Ventana implements ActionListener {
 					estado.setText("<html><b color=red>No Converge</b> con X0 = " + tabla.obtenerFila(0).obtenerX() +" y en " + maxIteraciones_entrada.getText() + " Iteraciones </html>");
 				}
 				
-				ArregloDatos=new Object[tabla.tamaño()][2];
+				ArregloDatos=new Object[tabla.tamaño()][4];
 				for(int x=0;x<tabla.tamaño();x++){
-					ArregloDatos[x][0]="X"+x;
+					ArregloDatos[x][0]=x;
 					ArregloDatos[x][1]=tabla.obtenerFila(x).obtenerX();
+					ArregloDatos[x][2]=tabla.obtenerFila(x).obtenerError();
+					ArregloDatos[x][3]=Funcion.original(tabla.obtenerFila(x).obtenerX());
 				}
-				dtm = new DefaultTableModel(ArregloDatos, new Object[]{"X","Valor"});
+				dtm = new DefaultTableModel(ArregloDatos, new Object[]{"n","Xn","Error","F(Xn)"});
 				table = new JTable(dtm);
+				DefaultTableCellRenderer centrar = new DefaultTableCellRenderer();
+				centrar.setHorizontalAlignment(SwingConstants.CENTER);
+				table.getColumnModel().getColumn(0).setCellRenderer(centrar);
+				table.getColumnModel().getColumn(1).setCellRenderer(centrar);
+				table.getColumnModel().getColumn(2).setCellRenderer(centrar);
+				table.getColumnModel().getColumn(3).setCellRenderer(centrar);
+				table.getTableHeader().setReorderingAllowed(false);
 				scrollpane.setViewportView(table);
 			}
 			catch (NumberFormatException e) {
