@@ -1,0 +1,23 @@
+package funciones;
+
+import datos.Tabla;
+
+public class IteradasFuncionales {
+
+	public static Tabla calcularIterada(double x, double errorMinimo){
+		Tabla datos=new Tabla();
+		double x1 ;
+	
+		while(true)
+		{
+			x1 =Funcion.original(x); // X=Y(x0)
+			datos.agregarFila(x1,errorMinimo);
+			if(Math.abs((x1-x)/x1)<errorMinimo){
+				break;
+			} 
+			x=x1;
+		}
+		return datos;
+	}
+	
+}
