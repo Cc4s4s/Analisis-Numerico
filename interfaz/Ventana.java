@@ -118,7 +118,7 @@ public class Ventana implements ActionListener {
 		}
 		catch (Exception evt){}
 		
-		int ancho = 550;
+		int ancho = 650;
 		int alto = 550;
 		
 		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
